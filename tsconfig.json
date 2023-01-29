@@ -1,0 +1,38 @@
+// {
+//   "extends": "@tsconfig/node16/tsconfig.json",
+//   "compilerOptions": {
+//     "target": "es2017",
+//     "module": "ESNext",
+//     "outDir": "dist",
+//     "sourceMap": true,
+//     "esModuleInterop": true,
+//     "moduleResolution": "node",
+//     "noImplicitAny": true
+//   },
+//   "include": ["*.ts"],
+//   "exclude": ["node_modules", "dist", ".vscode", "storage"],
+//   "ts-node": {
+//     "esm": true
+//   },
+// }
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "target": "es6",
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "*": [
+        "node_modules/*",
+        "*"
+      ]
+    }
+  },
+  "include": [
+    "*"
+  ]
+}
