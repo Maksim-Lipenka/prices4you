@@ -1,17 +1,26 @@
+export enum CategoriesEnum {
+  VIDEOCARDS = "videocards",
+  MOTHERBOARDS = "motherboards",
+  PROCESSORS = "processors",
+}
+
 export const CATEGORIES = {
   VIDEOCARDS: {
     id: 1,
-    name: "Video cards",
+    key: CategoriesEnum.VIDEOCARDS,
+    name: 'Video cards',
   },
   MOTHERBOARDS: {
     id: 2,
-    name: "Motherboards",
+    key: CategoriesEnum.MOTHERBOARDS,
+    name: 'Motherboards',
   },
   PROCESSORS: {
     id: 3,
-    name: "Motherboards",
+    key: CategoriesEnum.PROCESSORS,
+    name: 'Processors',
   },
-};
+}
 
 export const SHOPS = {
   PCROOM: {

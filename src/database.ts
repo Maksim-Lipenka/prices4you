@@ -3,6 +3,8 @@ import AutoIncrementCreator from 'mongoose-sequence'
 // @ts-ignore
 export const AutoIncrement = AutoIncrementCreator(mongoose)
 
+mongoose.set('strictQuery', false)
+
 export const startDatabase = async () => {
   mongoose.connection.once('open', () => {
     console.log('Connected to database')

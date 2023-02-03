@@ -1,21 +1,26 @@
 import mongoose from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 import { AutoIncrement } from "../database";
+import { BaseDocumentType } from "./types";
 
 export const PRODUCT_COUNTER_ID = "product_id";
 
+export type FilterType = { [key: string]: number };
+
 export type ProductType = {
-  _id?: number;
-  name: string;
-  price: number;
-  imageUrl?: string;
-  sku?: string;
-  code?: string;
-  url: string;
-  category: number;
-  shop: number;
-  externalId: string;
-  unavailable?: boolean;
-};
+  _id?: number
+  name: string
+  price: number
+  imageUrl?: string
+  sku?: string
+  code?: string
+  url: string
+  category: number
+  shop: number
+  externalId: string
+  unavailable?: boolean
+  filters?: FilterType
+}
 
 const ProductSchema = new mongoose.Schema({
   _id: Number,
@@ -37,11 +42,11 @@ const ProductSchema = new mongoose.Schema({
   },
   category: {
     type: Number,
-    ref: "Category",
+    ref: 'Category',
   },
   shop: {
     type: Number,
-    ref: "Shop",
+    ref: 'Shop',
     required: true,
   },
   externalId: {
@@ -52,7 +57,13 @@ const ProductSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-});
+  filters: {
+    // structure: { filterKey: filterId}
+    type: mongoose.SchemaTypes.Mixed,
+    default: {},
+  },
+})
+ProductSchema.plugin(mongoosePaginate);
 // @ts-ignore
 ProductSchema.plugin(AutoIncrement, {
   id: PRODUCT_COUNTER_ID,
@@ -68,4 +79,5 @@ ProductSchema.set("toJSON", {
   },
 });
 
-export const Product = mongoose.model("Product", ProductSchema);
+interface ProductDocument extends BaseDocumentType, ProductType {}
+export const Product = mongoose.model<ProductDocument, mongoose.PaginateModel<ProductDocument>>('Product', ProductSchema)

@@ -1,9 +1,10 @@
 import { log } from 'crawlee'
 import { Product } from '../../models'
-import { ProductType } from '../../models/product'
-import { SHOPS } from '../consts'
+import { FilterType, ProductType } from '../../models/product'
+import { CATEGORIES, SHOPS } from '../consts'
 import { createCrawler, RequestHandlerType } from '../utils'
 import { URLS_PCROOM } from './consts'
+import { VIDEOCARDS_FILTERS } from '../filters'
 
 const requestList = Object.entries(URLS_PCROOM).map(([categoryId, url]) => ({
   url,
@@ -15,6 +16,8 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
 
   const products: ProductType[] = []
   $('.product-wrapper').each((_, el) => {
+    const { categoryId } = request.userData
+
     const price = $(el).find('.price > ins').text() || $(el).find('.price').text()
     const dotIndex = price.indexOf('.')
     const rawPrice = price.slice(0, dotIndex).replace(',', '').trim()
@@ -24,15 +27,37 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
     const externalId = splittedUrl?.[splittedUrl.length - 2] || null
     if (!externalId) log.error('externalId is null!')
 
+    const productName = $(el).find('.wd-entities-title').text()
+
+    const filters: FilterType = {}
+    if (Number(categoryId) === CATEGORIES.VIDEOCARDS.id) {
+      let manufacturer = 0 // 0 = unknown
+      VIDEOCARDS_FILTERS.manufacturer.options.find((filter) => {
+        if (productName.toLowerCase().includes(filter.label.toLowerCase())) {
+          manufacturer = filter.id
+        }
+      })
+      filters.manufacturer = manufacturer
+
+      let gpu = 0 // 0 = unknown
+      VIDEOCARDS_FILTERS.gpu.options.find((filter) => {
+        if (filter.keywords.every((keyword) => productName.toLowerCase().includes(keyword.toLowerCase()))) {
+          gpu = filter.id
+        }
+      })
+      filters.gpu = gpu
+    }
+
     // don't forget to update update product part of the code if you change this
     products.push({
-      name: $(el).find('.wd-entities-title').text(),
+      name: productName,
       price: Number(rawPrice),
       imageUrl: $(el).find('.product-image-link > img').attr('data-wood-src'),
       url: $(el).find('.product-image-link').attr('href')!,
-      category: request.userData.categoryId,
+      category: categoryId,
       shop: SHOPS.PCROOM.id,
       externalId: externalId!,
+      filters
     })
   })
 
@@ -61,6 +86,7 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
       product.imageUrl = newProduct.imageUrl
       product.url = newProduct.url
       product.unavailable = false
+      product.filters = newProduct.filters
 
       await product.save()
     }),
