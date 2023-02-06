@@ -3,9 +3,9 @@ import { Product } from '../../models'
 import { ProductType } from '../../models/product'
 import { SHOPS } from '../consts'
 import { createCrawler, getFilters, RequestHandlerType } from '../utils'
-import { URLS_PCROOM } from './consts'
+import { URLS_GITEC } from './consts'
 
-const requestList = Object.entries(URLS_PCROOM).map(([categoryId, url]) => ({
+const requestList = Object.entries(URLS_GITEC).map(([categoryId, url]) => ({
   url,
   userData: { categoryId },
 }))
@@ -14,19 +14,19 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
   log.info(`Processing ${request.url}...`)
 
   const products: ProductType[] = []
-  $('.product-wrapper').each((_, el) => {
+  $('.product-item').each((_, el) => {
     const { categoryId } = request.userData
 
-    const price = $(el).find('.price > ins').text() || $(el).find('.price').text()
-    const dotIndex = price.indexOf('.')
-    const rawPrice = price.slice(0, dotIndex).replace(',', '').trim()
+    const price = $(el).find('.actual-price').text() || $(el).find('.only-price').text()
+    console.log(price);
+    const dotIndex = price.indexOf(',')
+    const rawPrice = price.slice(0, dotIndex).trim()
 
-    // extenalId is the last part of the url path (e.g. https://pcroom.ge/producti/1234567/)
-    const splittedUrl = $(el).find('.wd-entities-title > a').attr('href')?.split('/')
-    const externalId = splittedUrl?.[splittedUrl.length - 2] || null
+    const sku = $(el).find('.sku').text() || null
+    const externalId = sku;
     if (!externalId) log.error('ERROR: externalId is null!')
 
-    const productName = $(el).find('.wd-entities-title').text()
+    const productName = $(el).find('.product-title').text()
 
     const filters = getFilters({ categoryId, productName })
 
@@ -34,12 +34,13 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
     products.push({
       name: productName,
       price: !isNaN(Number(rawPrice)) ? Number(rawPrice) : 0,
-      imageUrl: $(el).find('.product-image-link > img').attr('data-wood-src'),
-      url: $(el).find('.product-image-link').attr('href')!,
+      imageUrl: $(el).find('.picture-img').attr('src'),
+      url: `${SHOPS.GITEC.url}${$(el).find('.picture > a').attr('href')!}`,
       category: categoryId,
-      shop: SHOPS.PCROOM.id,
+      shop: SHOPS.GITEC.id,
       externalId: externalId!,
       filters,
+      sku,
     })
   })
 
@@ -47,19 +48,19 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
   const productsIds = products.map((p) => p.externalId)
   const productsToUpdate = await Product.find({
     externalId: { $in: productsIds },
-    shop: SHOPS.PCROOM.id,
+    shop: SHOPS.GITEC.id,
     category: request.userData.categoryId,
   })
   const productsToCreate = products.filter((p) => !productsToUpdate.find((pu) => pu.externalId === p.externalId))
   const productsToArchive = await Product.find({
     externalId: { $nin: productsIds },
-    shop: SHOPS.PCROOM.id,
+    shop: SHOPS.GITEC.id,
     category: request.userData.categoryId,
     unavailable: false,
   })
-  log.info(`PCROOM products to update: ${productsToUpdate.length}`)
-  log.info(`PCROOM products to create: ${productsToCreate.length}`)
-  log.info(`PCROOM products to archive: ${productsToArchive.length}`)
+  log.info(`GITEC products to update: ${productsToUpdate.length}`)
+  log.info(`GITEC products to create: ${productsToCreate.length}`)
+  log.info(`GITEC products to archive: ${productsToArchive.length}`)
 
   await Promise.all([
     // update existing products
@@ -72,6 +73,7 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
       product.url = newProduct.url
       product.unavailable = false
       product.filters = newProduct.filters
+      product.sku = newProduct.sku
 
       await product.save()
     }),
@@ -84,7 +86,7 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
     }),
   ])
 
-  log.info(`PC Room products saved to database. Category: ${request.userData.categoryId}`)
+  log.info(`GITEC products saved to database. Category: ${request.userData.categoryId}`)
 }
 
-export const scrapePCRoom = createCrawler(requestHandler, requestList)
+export const scrapeGITEC = createCrawler(requestHandler, requestList)

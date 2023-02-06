@@ -28,4 +28,9 @@ export const SHOPS = {
     name: "PC Room",
     url: "https://pcroom.ge",
   },
+  GITEC: {
+    id: 2,
+    name: "gITec",
+    url: "https://gitec.ge",
+  }
 };

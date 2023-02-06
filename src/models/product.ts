@@ -12,7 +12,7 @@ export type ProductType = {
   name: string
   price: number
   imageUrl?: string
-  sku?: string
+  sku?: string | null
   code?: string
   url: string
   category: number
