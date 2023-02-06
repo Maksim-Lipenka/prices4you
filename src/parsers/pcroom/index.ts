@@ -1,10 +1,9 @@
 import { log } from 'crawlee'
 import { Product } from '../../models'
-import { FilterType, ProductType } from '../../models/product'
-import { CATEGORIES, SHOPS } from '../consts'
-import { createCrawler, RequestHandlerType } from '../utils'
+import { ProductType } from '../../models/product'
+import { SHOPS } from '../consts'
+import { createCrawler, getFilters, RequestHandlerType } from '../utils'
 import { URLS_PCROOM } from './consts'
-import { VIDEOCARDS_FILTERS } from '../filters'
 
 const requestList = Object.entries(URLS_PCROOM).map(([categoryId, url]) => ({
   url,
@@ -29,35 +28,18 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
 
     const productName = $(el).find('.wd-entities-title').text()
 
-    const filters: FilterType = {}
-    if (Number(categoryId) === CATEGORIES.VIDEOCARDS.id) {
-      let manufacturer = 0 // 0 = unknown
-      VIDEOCARDS_FILTERS.manufacturer.options.find((filter) => {
-        if (productName.toLowerCase().includes(filter.label.toLowerCase())) {
-          manufacturer = filter.id
-        }
-      })
-      filters.manufacturer = manufacturer
-
-      let gpu = 0 // 0 = unknown
-      VIDEOCARDS_FILTERS.gpu.options.find((filter) => {
-        if (filter.keywords.every((keyword) => productName.toLowerCase().includes(keyword.toLowerCase()))) {
-          gpu = filter.id
-        }
-      })
-      filters.gpu = gpu
-    }
+    const filters = getFilters({ categoryId, productName })
 
     // don't forget to update update product part of the code if you change this
     products.push({
       name: productName,
-      price: Number(rawPrice),
+      price: !isNaN(Number(rawPrice)) ? Number(rawPrice) : 0,
       imageUrl: $(el).find('.product-image-link > img').attr('data-wood-src'),
       url: $(el).find('.product-image-link').attr('href')!,
       category: categoryId,
       shop: SHOPS.PCROOM.id,
       externalId: externalId!,
-      filters
+      filters,
     })
   })
 
@@ -75,6 +57,9 @@ const requestHandler: RequestHandlerType = async ({ request, $ }) => {
     category: request.userData.categoryId,
     unavailable: false,
   })
+  log.info(`PCROOM products to update: ${productsToUpdate.length}`)
+  log.info(`PCROOM products to create: ${productsToCreate.length}`)
+  log.info(`PCROOM products to archive: ${productsToArchive.length}`)
 
   await Promise.all([
     // update existing products

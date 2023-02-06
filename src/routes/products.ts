@@ -23,10 +23,11 @@ type QueryType = {
   shop?: string
   page?: number
   perPage?: number
+  search?: string
 } & FiltersQuery
 
 productsRouter.get("/", async (req, res) => {
-  const { sort = Sort.NO_SORT, category, shop, page, perPage, ...queryFilters }: QueryType = req.query
+  const { sort = Sort.NO_SORT, category, shop, page, perPage, search, ...queryFilters }: QueryType = req.query
 
   const filters: {[key: string]: unknown} = {}
   if (category) {
@@ -45,6 +46,7 @@ productsRouter.get("/", async (req, res) => {
     ...(shop && { shop }),
     unavailable: false,
     ...filters,
+    ...(search && { name: { $regex: search, $options: "i" } }),
   };
 
   const options = {
